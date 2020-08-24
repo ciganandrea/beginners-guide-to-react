@@ -1,20 +1,42 @@
-<body>
-	<div id="root"></div>
-	<script src="https://unpkg.com/react@16.7.0/umd/react.production.min.js"></script>
-	<script src="https://unpkg.com/react-dom@16.7.0/umd/react-dom.production.min.js"></script>
-	<script>
-		const rootElement = document.querySelector('#root');
-		const bold = React.createElement('strong', null, 'Lorem');
-		const element = React.createElement('div', {
-			children: ['Hello', ' ', bold],
-			className: 'container',
-		});
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
 
-		ReactDOM.render(element, rootElement);
+		<style>
+			.container {
+				font-family: monospace;
+			}
+		</style>
+	</head>
 
-		// const element = document.createElement('div');
-		// element.textContent = 'Hello Wolf';
-		// element.class = 'container';
-		// rootElement.appendChild(element);
-	</script>
-</body>
+	<body>
+		<div id="root" class="container"></div>
+		<script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+		<script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+		<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+		<script src="https://unpkg.com/prop-types@15.6/prop-types.js"></script>
+
+		<script type="text/babel">
+			const rootElement = document.getElementById('root');
+
+			function SayHello({ firstName, lastName }) {
+				return (
+					<div>
+						Hello, {firstName} {lastName}!
+					</div>
+				);
+			}
+
+			SayHello.propTypes = {
+				firstName: PropTypes.string.isRequired,
+				lastName: PropTypes.string.isRequired,
+			};
+
+			const element = <SayHello firstName={'false'} lastName={123} />;
+			ReactDOM.render(element, rootElement);
+		</script>
+	</body>
+</html>
