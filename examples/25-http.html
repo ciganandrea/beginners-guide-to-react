@@ -57,19 +57,20 @@
             id
             number
             name
+						imgage
             attacks {
               special {
                 name
                 type
                 damage
-              }
+							}
             }
           }
         }
       `;
 
 			return window
-				.fetch('graphql-pokemon2.vercel.app', {
+				.fetch('https://graphql-pokemon2.vercel.app/', {
 					// learn more about this API here: https://github.com/lucasbento/graphql-pokemon
 					method: 'POST',
 					headers: {
