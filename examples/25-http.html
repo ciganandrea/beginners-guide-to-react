@@ -18,45 +18,50 @@
 		}
 
 		function PokemonInfo({ pokemonName }) {
+			const [status, setStatus] = React.useState('idle');
 			const [pokemon, setPokemon] = React.useState(null);
+			const [error, setError] = React.useState(null);
 
 			React.useEffect(() => {
 				if (!pokemonName) {
 					return;
 				}
 
-				getFromAPI({ query: 'getPokemon', name: pokemonName }).then(
-					(pokemonData) => {
+				setStatus('pending');
+
+				getFromApi({ query: 'getPokemon', name: pokemonName })
+					.then((pokemonData) => {
 						setPokemon(pokemonData.pokemon);
-					}
-				);
+						setStatus('resolved');
+					})
+					.catch((errorData) => {
+						setStatus('rejected');
+						setError(errorData);
+					});
 			}, [pokemonName]);
 
-			console.log(pokemon);
-
-			if (!pokemonName) {
-				return 'Submit a pokemon';
+			switch (status) {
+				case 'idle':
+					return 'Submit a pokemon';
+					break;
+				case 'pending':
+					return '…';
+					break;
+				case 'resolved':
+					return (
+						<>
+							<img src={pokemon.image} alt={pokemon.name} />
+							<h1>{pokemon.name}</h1>
+							<pre>{JSON.stringify(pokemon, null, 2)}</pre>
+						</>
+					);
+					break;
+				case 'rejected':
+					return <div>🐛 An Error occurred!</div>;
+					break;
+				default:
+					return 'Submit a pokemon';
 			}
-
-			if (!pokemon) {
-				return (
-					<>
-						<p>
-							Are you sure
-							<strong> {pokemonName} </strong>
-							is how you spell it?
-						</p>
-					</>
-				);
-			}
-
-			return (
-				<>
-					<img src={pokemon.image} alt={pokemon.name} />
-					<h1>{pokemon.name}</h1>
-					<pre>{JSON.stringify(pokemon, null, 2)}</pre>
-				</>
-			);
 		}
 
 		function App() {
@@ -64,11 +69,8 @@
 			const [allPokemons, setAllPokemons] = React.useState([]);
 
 			function getAllPokemons() {
-				getFromAPI({ query: 'getAllPokemons' }).then((data) => {
-					const sortedPokemons = sortByKey([...data.pokemons], 'name');
-					console.log('[data]', data);
-					console.log('[sortedPokemons]', sortedPokemons);
-					setAllPokemons(sortedPokemons);
+				getFromApi({ query: 'getAllPokemons' }).then((data) => {
+					setAllPokemons(data.pokemons);
 				});
 			}
 
@@ -81,6 +83,7 @@
 				getAllPokemons();
 			}, []);
 
+			// NOTE: Original code
 			// return (
 			// 	<div>
 			// 		<form onSubmit={handleSubmit}>
@@ -95,18 +98,46 @@
 			// 	</div>
 			// );
 
+			const allPokemonsSorted = sortByKey([...allPokemons], 'name');
+			const allPokemonsGrouped = allPokemonsSorted.reduce(
+				(accumulator, current, index, initialArray) => {
+					const { name } = current;
+					const isNewInitial =
+						index === 0 ||
+						name[0].toUpperCase() !==
+							initialArray[index - 1].name[0].toUpperCase();
+
+					if (isNewInitial) {
+						accumulator.push([current]);
+					} else {
+						accumulator[accumulator.length - 1].push(current);
+					}
+
+					return accumulator;
+				},
+				[]
+			);
+
 			return (
 				<div>
 					<form onSubmit={handleSubmit}>
 						<label htmlFor="pokemonName">Pokemon Name: </label>
 						<div>
 							<select id="pokemonName" style={{ marginRight: '10px' }}>
-								{allPokemons.map((pokemon) => {
-									const { id, name } = pokemon;
+								{allPokemonsGrouped.map((group) => {
+									const letter = group[0].name[0];
+
 									return (
-										<option key={id} value={name}>
-											{name}
-										</option>
+										<optgroup key={letter} label={letter}>
+											{group.map((pokemon) => {
+												const { id, name } = pokemon;
+												return (
+													<option key={id} value={name}>
+														{name}
+													</option>
+												);
+											})}
+										</optgroup>
 									);
 								})}
 							</select>
@@ -119,30 +150,37 @@
 			);
 		}
 
-		function getFromAPI({ query, name }) {
+		function getFromApi({ query, name }) {
 			const queries = {
-				getPokemon: `
-		      query ($name: String) {
-		        pokemon(name: $name) {
-		          id
-		          number
-						name
+				getPokemon: `query ($name: String) {
+					pokemon(name: $name) {
+						id
+						number
+						name#
 						image
-		          attacks {
-		            special {
-		              name
-		              type
-		              damage
+						attacks {
+							special {
+								name
+								type
+								damage
 							}
-		          }
-		        }
-					}`,
-				getAllPokemons: `query {
-		        pokemons(first: 999) {
-							id
-							name
 						}
-					}`
+					}
+				}`,
+
+				getAllPokemons: `query {
+					pokemons(first: 999) {
+						id
+						name
+					}
+				}`,
+
+				getSchema: `query {
+					__type(name: "Query"){
+						name
+						description
+					}
+				}`
 			};
 
 			return window
