@@ -3,6 +3,58 @@
 		body {
 			font-family: monospace;
 		}
+
+		.table th {
+			text-align: right;
+			padding-right: 20px;
+		}
+
+		.table td {
+			text-align-last: left;
+		}
+
+		.table__link {
+			color: blue;
+			text-decoration: underline;
+			cursor: pointer;
+		}
+
+		.loader {
+			display: inline-block;
+		}
+
+		.loader__container {
+			display: flex;
+			flex-direction: row;
+			flex-wrap: nowrap;
+			align-items: center;
+			justify-content: center;
+			padding: 2px;
+		}
+
+		.loader__spinner {
+			display: inline-block;
+			box-sizing: border-box;
+			border: 5px solid #f3f3f3; /* Light grey */
+			border-top: 5px solid #3498db; /* Blue */
+			border-radius: 50%;
+			width: 20px;
+			height: 20px;
+			animation: spin 2s linear infinite;
+		}
+
+		.loader__text {
+			margin-left: 10px;
+		}
+
+		@keyframes spin {
+			0% {
+				transform: rotate(0deg);
+			}
+			100% {
+				transform: rotate(360deg);
+			}
+		}
 	</style>
 </head>
 <body>
@@ -17,7 +69,18 @@
 			);
 		}
 
-		function PokemonInfo({ pokemonName }) {
+		function Loader() {
+			return (
+				<div className="loader">
+					<div className="loader__container">
+						<div className="loader__spinner"></div>
+						<span className="loader__text">Loading…</span>
+					</div>
+				</div>
+			);
+		}
+
+		function PokemonInfo({ pokemonName, handleClick }) {
 			const [status, setStatus] = React.useState('idle');
 			const [pokemon, setPokemon] = React.useState(null);
 			const [error, setError] = React.useState(null);
@@ -45,14 +108,42 @@
 					return 'Submit a pokemon';
 					break;
 				case 'pending':
-					return '…';
+					return <Loader />;
 					break;
 				case 'resolved':
+					console.log(pokemon);
+
+					const { number, name, image, evolutions } = pokemon;
 					return (
 						<>
-							<img src={pokemon.image} alt={pokemon.name} />
-							<h1>{pokemon.name}</h1>
-							<pre>{JSON.stringify(pokemon, null, 2)}</pre>
+							<img src={image} alt={name} />
+							<h1>{name}</h1>
+							{
+								// <pre>{JSON.stringify(pokemon, null, 2)}</pre>
+							}
+							<table className="table">
+								<tr>
+									<th>number</th>
+									<td>{number}</td>
+								</tr>
+								<tr>
+									<th>name</th>
+									<td>{name}</td>
+								</tr>
+								{evolutions && (
+									<tr>
+										<th>evolutions</th>
+										{evolutions.map((item) => (
+											<td
+												className="table__link"
+												onClick={() => handleClick(item.name)}
+											>
+												{item.name}
+											</td>
+										))}
+									</tr>
+								)}
+							</table>
 						</>
 					);
 					break;
@@ -77,6 +168,10 @@
 			function handleSubmit(event) {
 				event.preventDefault();
 				setPokemonName(event.target.elements.pokemonName.value);
+			}
+
+			function handleClick(name) {
+				setPokemonName(name);
 			}
 
 			React.useEffect(() => {
@@ -145,7 +240,7 @@
 						</div>
 					</form>
 					<hr />
-					<PokemonInfo pokemonName={pokemonName} />
+					<PokemonInfo handleClick={handleClick} pokemonName={pokemonName} />
 				</div>
 			);
 		}
@@ -156,14 +251,10 @@
 					pokemon(name: $name) {
 						id
 						number
-						name#
+						name
 						image
-						attacks {
-							special {
-								name
-								type
-								damage
-							}
+						evolutions {
+							name
 						}
 					}
 				}`,
